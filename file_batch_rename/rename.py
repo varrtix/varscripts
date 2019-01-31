@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 import os, sys, shutil
 
-def
-
 def moveFunc2(targetPath, rootPath = '.'):
     probe = False
     fileList = os.listdir(rootPath)
