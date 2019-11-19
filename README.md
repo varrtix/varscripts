@@ -1,2 +1,2 @@
-# little_scripts
-Keep track of the little scripts in my Python learning.
+# varscripts
+Auto install some software and system setting.
