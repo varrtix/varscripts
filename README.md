@@ -1,2 +1,2 @@
 # varscripts
-Auto install some software and system setting.
+Auto install some softwares and system settings.
