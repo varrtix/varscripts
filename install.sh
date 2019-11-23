@@ -9,7 +9,6 @@ readonly VERSION="1.0"
 readonly AUTHORS=("varrtix<tiamo_nana@outlook.com>")
 local SYSTEM=''
 local RELEASE=''
-# readonly MACHINE=$(uname -s)
 
 # terminal font style
 readonly RED_FS='\033[31m'
@@ -30,7 +29,7 @@ readonly BOLD_FS='\033[1m'
 err() {
   if [[ $1 -ne 0 ]]; then
     echo -e "[$(date +'%Y-%m-%dT%H:%M:%S%:z')]${RED_FS}Error:${PLAIN_FS} ${BOLD_FS}$2${PLAIN_FS}" >&2
-    exit 1
+    exit $1
   fi
 }
 
@@ -53,10 +52,12 @@ check_sys() {
       if [[ -s /etc/os-release ]]; then
           SYSTEM=$(cat /etc/os-release \
 		       | grep -E "^NAME=+" \
-		       | awk -F "\"" '{print $2}')
+		       | awk -F "\"" '{print $2}' \
+		       | awk '{print $1}')
 	  RELEASE=$(cat /etc/os-release \
 			| grep -E "^VERSION=+" \
-			| awk -F "\"" '{print $2}')
+			| awk -F "\"" '{print $2}' \
+			| awk '{print $1}')
       fi
       ;;
     *)
@@ -94,7 +95,32 @@ menu_init() {
 +---------------------------------------------------------+
 
 EOF
+  case ${SYSTEM} in
+    'macOS')
+      macos_menu
+    ;;
+    'CentOS')
+      centos_menu
+    ;;
+    *)
+      err 1 "Unknown system."
+    ;;
+  esac
+}
 
+macos_menu() {
+  cat <<EOF
+Functions:
+[1] Create backup
+EOF
+}
+
+centos_menu() {
+  cat<<EOF
+Functions:
+[1] 
+
+EOF
 }
 
 ###############################################################################
@@ -112,7 +138,7 @@ main() {
 # export PATH
   err $EUID "Make sure run the script as superuser."
   check_sys $(uname -s)
-  err $? "Unknown system"
+  err $? "Unknown system."
   menu_init SYSTEM RELEASE
 }
 
