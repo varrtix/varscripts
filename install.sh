@@ -7,7 +7,9 @@
 # script version
 readonly VERSION="1.0"
 readonly AUTHORS=("varrtix<tiamo_nana@outlook.com>")
-readonly MACHINE=$(uname -s)
+local SYSTEM=''
+local RELEASE=''
+# readonly MACHINE=$(uname -s)
 
 # terminal font style
 readonly RED_FS='\033[31m'
@@ -21,18 +23,53 @@ readonly BOLD_FS='\033[1m'
 # Globals:
 #  None
 # Arguments:
-#  error_msg
+#  error_no error_msg
 # Returns:
-#  None
-# Example:
-#  err "error_msg"
+#  if error, return 1, exit the script.
 ###############################################################################
 err() {
-  echo -e "[$(date +'%Y-%m-%dT%H:%M:%S%:z')]${RED_FS}Error:${PLAIN_FS} ${BOLD_FS}$@${PLAIN_FS}" >&2
+  if [[ $1 -ne 0 ]]; then
+    echo -e "[$(date +'%Y-%m-%dT%H:%M:%S%:z')]${RED_FS}Error:${PLAIN_FS} ${BOLD_FS}$2${PLAIN_FS}" >&2
+    exit 1
+  fi
 }
 
 ###############################################################################
-# initialize menu
+# Check system name & version
+# Globals:
+#  SYSTEM RELEASE
+# Arguments:
+#  machine_name=>$(uname -s)
+# Returns:
+#  Success return 0, Failed return 1
+###############################################################################
+check_sys() {
+  case $1 in
+    Darwin)
+      SYSTEM='macOS'
+      RELEASE=$(sw_vers -productVersion)
+      ;;
+    Linux)
+      if [[ -s /etc/os-release ]]; then
+          SYSTEM=$(cat /etc/os-release \
+		       | grep -E "^NAME=+" \
+		       | awk -F "\"" '{print $2}')
+	  RELEASE=$(cat /etc/os-release \
+			| grep -E "^VERSION=+" \
+			| awk -F "\"" '{print $2}')
+      fi
+      ;;
+    *)
+      SYSTEM='Unknown'
+      RELEASE='0.0'
+      return 1
+      ;;
+  esac
+  return 0
+}
+
+###############################################################################
+# initialize menu view
 # Globals:
 #  None
 # Arguments:
@@ -40,33 +77,25 @@ err() {
 # Returns:
 #  None
 ###############################################################################
-init() {
+menu_init() {
   clear
   cat <<EOF
+
 +---------------------------------------------------------+
                         Delay tools
 +---------------------------------------------------------+
-   Auto install all the required settings for new system
+  Auto install all the required settings for new system
 +---------------------------------------------------------+
-   Authors: ${AUTHORS[0]}
+  Authors: ${AUTHORS[0]}
 +---------------------------------------------------------+
-   Version: ${VERSION}
+  System: ${SYSTEM} ${RELEASE}
 +---------------------------------------------------------+
+  Version: ${VERSION}
++---------------------------------------------------------+
+
 EOF
 
 }
-
-###############################################################################
-# Check system name
-# Globals:
-#  None
-# Arguments:
-#  None
-# Returns:
-#  None
-###############################################################################
-# check_sys() {
-# }
 
 ###############################################################################
 # Main entrance for the script.
@@ -81,10 +110,10 @@ main() {
 # Guess => Portability
 # PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
 # export PATH
-  [[ $EUID -ne 0 ]] && err "Make sure run the script as superuser." && exit 1
-  # readonly machine=$(check_machine)
-  echo ${MACHINE}
-  # check_sys
+  err $EUID "Make sure run the script as superuser."
+  check_sys $(uname -s)
+  err $? "Unknown system"
+  menu_init SYSTEM RELEASE
 }
 
 main "$@"
@@ -95,7 +124,5 @@ main "$@"
 # Arguments:
 #  None
 # Returns:
-#  None
-# Example:
 #  None
 ###############################################################################
