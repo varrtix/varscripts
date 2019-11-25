@@ -118,9 +118,22 @@ EOF
 centos_menu() {
   cat<<EOF
 Functions:
-[1] 
+[1] Replace repo
+[2] Restore repo
+[3] Install vim
+[4] Install Emacs
 
 EOF
+  local opt
+  read -p "Please select a number of options: " opt
+  readonly opt
+  case ${opt} in
+    1);;
+    2);;
+    3);;
+    4);;
+    *);;
+  esac
 }
 
 ###############################################################################
