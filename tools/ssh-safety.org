@@ -1,0 +1,80 @@
+#+title: Linux远程安全加固
+#+description: 对目标机的用户权限以及sshd服务进行修改，提高远程访问的安全性。
+#+author: varrtix
+#+email: tiamo_nana@outlook.com
+#+date: 2019:11:06
+
+* 用户登陆权限
+** 创建普通用户
+#+BEGIN_SRC bash
+# Create a new user, username[custom]
+sudo useradd -d /home/username/ -s $(which bash) username
+# Change password of the user, password[custom]
+sudo passwd username
+#+END_SRC
+
+** 禁用root用户直接登陆
+目标机文件：/etc/ssh/sshd_config
+追加字段：PermitRootLogin no
+#+BEGIN_SRC bash
+# Remove the parameters that have been enabled
+sudo sed -i '/PermitRootLogin/d' /etc/ssh/sshd_config
+# Add ‘PermitRootlogin no'
+sudo bash -c "echo 'PermitRootLogin no' >> /etc/ssh/sshd_config"
+# Restart sshd service
+sudo systemctl restart sshd
+#+END_SRC
+
+** 禁止空密码用户登陆
+目标机文件：/etc/ssh/sshd_config
+追加字段：PermitEmptyPasswords no
+#+BEGIN_SRC bash
+# Remove the parameters that have been enabled
+sudo sed -i '/PermitEmptyPasswords/d' /etc/ssh/sshd_config
+# Add ‘PermitEmptyPasswords no'
+sudo bash -c "echo 'PermitEmptyPasswords no' >> /etc/ssh/sshd_config"
+# Restart sshd service
+sudo systemctl restart sshd
+#+END_SRC
+
+** 追加新端口及禁用默认端口远程登陆
+目标机文件：/etc/ssh/sshd_config
+追加字段：Port PortNumber
+#+BEGIN_SRC bash
+# Append new port number
+sudo bash -c "echo 'Port portnumber' >> /etc/ssh/sshd_config"
+# Restart sshd service
+sudo systemctl restart sshd
+# Exit the target machine
+exit
+# Relogin the target machine
+ssh -p portnumber username@ip
+# Remove default port
+sudo sed -i '/Port 22/d' /etc/ssh/sshd_config
+# Restart sshd service
+sudo systemctl restart sshd
+#+END_SRC
+
+** 公钥远程登陆及关闭密码登陆
+目标机文件：/etc/ssh/sshd_config
+追加字段：RSAAuthentication yes
+     PubkeyAuthentication yes
+     PasswordAuthentication no
+     StrictModes no
+#+BEGIN_SRC bash
+# Generate password digest[sha256] and keys
+ssh-keygen -t rsa -C $(echo -n "password" | openssl dgst --sha256 | awk '{print $2}')
+# Copy public key to target machine
+scp ${HOME}/.ssh/id_rsa.pub -P portnumber username@ip:~/
+# Login target machine
+ssh -p portnumber username@ip
+# Append public keys to file: authorized_keys
+cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
+# Remove the parameters and append to the end line of sshd_config
+sudo sed -i '/RSAAuthentication/d' /etc/ssh/sshd_config && sudo bash -c "echo 'RSAAuthentication yes' >> /etc/ssh/sshd_config"
+sudo sed -i '/PubkeyAuthentication/d' /etc/ssh/sshd_config && sudo bash -c "echo 'PubkeyAuthentication yes' >> /etc/ssh/sshd_config"
+sudo sed -i '/PasswordAuthentication/d' /etc/ssh/sshd_config && sudo bash -c "echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config"
+sudo sed -i '/StrictModes/d' /etc/ssh/sshd_config && sudo bash -c "echo 'StrictModes no' >> /etc/ssh/sshd_config"
+# Restart sshd service
+sudo systemctl restart sshd
+#+END_SRC
